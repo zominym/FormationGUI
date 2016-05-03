@@ -82,68 +82,6 @@ namespace Metaheuristic
 			}
 		}
 
-		public Solution(int nbCentres) {
-			List<City> _cities = GUI.MainClass.getCities();
-			List<Agency> _agencies = GUI.MainClass.getAgencies();
-			List<City> previous = new List<City>();
-			id = ID + 1;
-			ID++;
-			int tirage, capacityRequired;
-			for (int i = 0; i < nbCentres; i++) {
-				do
-				{
-					tirage = rand.Next(_cities.Count);
-					capacityRequired = _agencies[i].getNbPers() + this.getNbPers(_cities[tirage]);
-				} while (capacityRequired > CITYCAPACITY || previous.Contains(_cities[tirage]));
-
-				_tuples[i] = new Tuple<Agency, City>(_agencies[i], _cities[tirage]);
-				previous.Add(_cities[tirage]);
-			}
-			_cities = getUsedCities();
-			for (int i = nbCentres; i < _agencies.Count; i++) {
-				do
-				{
-					tirage = rand.Next(_cities.Count);
-					capacityRequired = _agencies[i].getNbPers() + this.getNbPers(_cities[tirage]);
-				} while (capacityRequired > CITYCAPACITY);
-
-				_tuples[i] = new Tuple<Agency, City>(_agencies[i], _cities[tirage]);
-			}
-		}
-
-		// Constructeur de solution aléatoire avec distance maximum entre deux villes
-		public Solution(int distanceMax, int increment = 10, int refusMax = 100) {
-			id = ID + 1;
-			ID++;
-			List<City> _cities = GUI.MainClass.getCities();
-
-			City c = new City();
-            int i = 0;
-			foreach (Agency a in MainClass.getAgencies()) {
-				int refus = 0;
-				bool loop = true;
-				do {
-					c = _cities[rand.Next(_cities.Count)];
-
-					if (refus >= refusMax) {
-						refus = 0;
-						distanceMax += increment;
-					}
-
-					if (this.getNbPers(c) + a.getNbPers() <= CITYCAPACITY)
-						loop = false;
-
-					if (a.distanceTo(c) > distanceMax) {
-						loop = true;
-						refus++;
-					}
-				} while (loop);
-                _tuples[i] = new Tuple<Agency, City>(a, c);
-                i++;
-			}
-
-		}
-
 		public Solution (Solution s) {
 			id = ID + 1;
 			ID++;
@@ -159,15 +97,6 @@ namespace Metaheuristic
 				if (_neighbors == null)
                     buildNeighborhood();
                 return _neighbors;
-            }
-        }
-
-        public List<Solution> Neighbors2
-        {
-            get {
-                if (_neighbors2 == null)
-                    buildNeighborhood2();
-                return _neighbors2;
             }
         }
 
@@ -216,26 +145,6 @@ namespace Metaheuristic
             }
         }
 
-
-        private void buildNeighborhood2()
-        {
-            _neighbors2 = new List<Solution>();
-            int tirage, capacityRequired;
-            List<City> _cities = GUI.MainClass.getCities();
-            for (int i = 0; i < _tuples.Length; i++){
-                Solution tmp = new Solution(this);
-                do
-                {
-                    tirage = rand.Next(_cities.Count);
-                    capacityRequired = _tuples[i].Item1.getNbPers() + this.getNbPers(_cities[tirage]);
-                } while (capacityRequired > CITYCAPACITY);
-
-                _tuples[i] = new Tuple<Agency, City>(_tuples[i].Item1, _cities[tirage]);
-                if (tmp != null)
-                    _neighbors2.Add(tmp);
-            }
-        }
-
 		private Solution swap(int a, int b){
 			Solution temp = new Solution(this);
 			City tmp = temp._tuples[a].Item2;
@@ -275,96 +184,6 @@ namespace Metaheuristic
 			return temp;
 		}
 
-        public void mutation() {
-            int MAX_TRIES = 5;
-            this._cost = -1;
-
-            // Selecting one tuple randomly
-            int targeted = rand.Next(_tuples.Length);
-            // Saving the current city
-            Tuple<Agency, City> old = _tuples[targeted];
-            do
-            {
-                // Restore the previous one
-                _tuples[targeted] = old;
-                // Targeting one Tuple
-                targeted = rand.Next(_tuples.Length);
-                // Saving current state
-                old = _tuples[targeted];
-                // Affecting to an other city
-                _tuples[targeted] = new Tuple<Agency, City>(_tuples[targeted].Item1, _tuples[rand.Next(_tuples.Length)].Item2);
-                MAX_TRIES--;
-            } while (!this.validateCities() && MAX_TRIES > 0);
-
-            if (MAX_TRIES <= 0)
-            {
-                _tuples[targeted] = old;
-
-                MAX_TRIES = 50;
-                Dictionary<int, City> olders = new Dictionary<int, City>();
-                do
-                {
-                    // Restore previous state
-                    if (olders.Count > 0)
-                        foreach (int i in olders.Keys)
-                            _tuples[i] = new Tuple<Agency, City>(_tuples[i].Item1, olders[i]);
-
-                    olders.Clear();
-
-                    // Chose a targeted city
-                    City chosen = _tuples[rand.Next(_tuples.Length)].Item2;
-                    // Chose a new location for the occurences of the city
-                    City newLocation = MainClass.getCities()[rand.Next(MainClass.getCities().Count)];
-
-                    // Change the targeted city in all tuples concerned
-                    for (int i = 0; i < _tuples.Length; ++i)
-                    {
-                        if (_tuples[i].Item2 == chosen)
-                        {
-                            // Saving current state
-                            olders.Add(i, _tuples[i].Item2);
-                            // Changing location
-                            _tuples[i] = new Tuple<Agency, City>(_tuples[i].Item1, newLocation);
-                        }
-
-                    }
-                    MAX_TRIES--;
-                } while (!this.validateCities() && MAX_TRIES > 0);
-
-
-                if (MAX_TRIES <= 0)
-                {
-                    if (olders.Count > 0)
-                        foreach (int i in olders.Keys)
-                            _tuples[i] = new Tuple<Agency, City>(_tuples[i].Item1, olders[i]);
-
-                    // Randomise one tuple
-                    _tuples[targeted] = new Tuple<Agency, City>(_tuples[targeted].Item1, MainClass.getCities()[rand.Next(MainClass.getCities().Count)]);
-
-                    // Last check
-                    if (!this.validateCities())
-                        _tuples[targeted] = old;
-                }
-
-            }
-        }
-
-		public Solution mutate(){
-            List<City> cities = MainClass.getCities();
-			Solution temp = new Solution(this);
-			bool loop = true;
-			do {
-				int idx = rand.Next(_tuples.Length);
-				City c = cities[rand.Next(cities.Count)];
-				temp._tuples[idx] = new Tuple<Agency, City>(temp._tuples[idx].Item1, c);
-				temp._cost = -1;
-				if (temp.getNbPers(_tuples[idx].Item2) <= CITYCAPACITY)
-					loop = false;
-			} while (loop);
-			return temp;
-
-        }
-
 		public Solution mutate(int n) {
 			List<City> _cities = GUI.MainClass.getCities();
 			Solution temp = new Solution(this);
@@ -387,48 +206,7 @@ namespace Metaheuristic
 
 			return temp;
 		}
-
-        public Solution mutateSA(){
-            List<City> _cities = GUI.MainClass.getCities();
-            Solution temp = new Solution(this);
-            City newCity;
-            bool yep = false;
-            int n = 0;
-            double maxValue = 0;
-            double cost = 0;
-            bool loop = true;
-            List<City> gUC = temp.getUsedCities();
-            for(int i = 0; i < _tuples.Length; i++)
-            {
-                Agency a = _tuples[i].Item1;
-                City c = _tuples[i].Item2;
-                if ((cost = a.distanceTo(c)) > maxValue)
-                {
-                    n = i;
-                    maxValue = cost;
-                    yep = true;
-                }
-            }
-            if(yep == false)
-                n = rand.Next(GUI.MainClass.getAgencies().Count);
-            do {
-                double rnd = rand.NextDouble();
-                if (rnd < 0.5)
-                    newCity = _cities[rand.Next(_cities.Count)];
-                else {
-                    newCity = gUC[rand.Next(gUC.Count)];
-                }
-                if(_tuples[n].Item1.distanceTo(newCity) < maxValue)
-                    if (temp.getNbPers(newCity) + temp._tuples[n].Item1.getNbPers() <= CITYCAPACITY)
-                        loop = false;
-            } while (loop);
-                
-            temp._cost = -1;
-            temp._tuples[n] = new Tuple<Agency, City>(temp._tuples[n].Item1, newCity);
-
-            return temp;
-        }
-
+       
 		public Solution mutate(int n, List<City> gUC) {
 			List<City> _cities = GUI.MainClass.getCities();
 			Solution temp = new Solution(this);
@@ -449,60 +227,7 @@ namespace Metaheuristic
 
 			return temp;
 		}
-
-		public Solution mutate3(int n) {
-			List<City> _cities = GUI.MainClass.getCities();
-			Solution temp = new Solution(this);
-			City c;
-			bool loop = true;
-			do {
-				c = _cities[rand.Next(_cities.Count)];
-				if (temp.getNbPers(c) + temp._tuples[n].Item1.getNbPers() <= CITYCAPACITY)
-					loop = false;
-			} while (loop);
-
-			temp._cost = -1;
-			temp._tuples[n] = new Tuple<Agency, City>(temp._tuples[n].Item1, c);
-
-			return temp;
-		}
-
-		public Solution mutate2a(int n) {
-			Solution temp = new Solution(this);
-			bool loop = true;
-			do {
-					List<City> cities = GUI.MainClass.getCities();
-					City c = cities[rand.Next(cities.Count)];
-					temp.swap(temp._tuples[n].Item2, c);
-					loop = false;
-			} while (loop);
-			return temp;
-		}
-
-		public Solution mutate2b(int n) {
-			Solution temp = new Solution(this);
-			bool loop = true;
-			do {
-					// échanger deux agences de deux centres ouverts entre elles
-					int i1 = rand.Next(_tuples.Length);
-					int i2 = rand.Next(_tuples.Length);
-
-					Agency a1 = temp._tuples[i1].Item1;
-					Agency a2 = temp._tuples[i2].Item1;
-
-					City c1 = temp._tuples[i1].Item2;
-					City c2 = temp._tuples[i2].Item2;
-
-					if (temp.getNbPers(c1) + a2.getNbPers() - a1.getNbPers() <= CITYCAPACITY
-						&& temp.getNbPers(c2) + a1.getNbPers() - a2.getNbPers() <= CITYCAPACITY) {
-						loop = false;
-						temp._tuples[i1] = new Tuple<Agency, City>(a1, c2);
-						temp._tuples[i2] = new Tuple<Agency, City>(a2, c1);
-					}
-				} while (loop);
-			return temp;
-		}
-
+        
 		public Solution mutate2(int n) {
 			Solution temp = new Solution(this);
 			bool loop = true;
@@ -555,7 +280,7 @@ namespace Metaheuristic
 			return nb;
 		}
 
-        public List<Solution> experiment(Solution mother)
+        public List<Solution> crossover(Solution mother)
         {
             int MAX_TRIES = 10;
 
@@ -587,51 +312,7 @@ namespace Metaheuristic
 
             return null;
         }
-
-        public List<Solution> recombinaison(Solution mother)
-        {
-            int MAX_TRIES = 20;
-
-            Solution son, daughter;
-
-            do
-            {
-                // Build son with this and daughter with mother
-                son = new Solution(this);
-                daughter = new Solution(mother);
-
-                // Select a random city in mother's tuples
-                City chosen = mother._tuples[rand.Next(_tuples.Length)].Item2;
-
-                Tuple<Agency, City> swap;
-                for (int i = 0; i < _tuples.Length; ++i)
-                {
-                    // Swapping
-                    if (mother._tuples[i].Item2 == chosen)
-                    {
-                        // Saving son current
-                        swap = son._tuples[i];
-                        // Son take from mother
-                        son._tuples[i] = daughter._tuples[i];
-                        // Daughter take from son
-                        daughter._tuples[i] = swap;
-                    }
-
-                }
-
-                if (son.validateCities() && daughter.validateCities())
-                {
-                    List<Solution> result = new List<Solution>();
-                    result.Add(son);
-                    result.Add(daughter);
-                    return result;
-                }
-                MAX_TRIES--;
-            } while (MAX_TRIES > 0);
-
-            return null;
-        }
-
+        
         public void badassMutation()
         {
             int MAX_TRIES = 10;
@@ -712,38 +393,6 @@ namespace Metaheuristic
 
         }
 
-
-
-        public List<Solution> crossover(Solution mother)
-		{
-            int MAX_TRIES = 10;
-			Solution son, daughter;
-
-            while (MAX_TRIES > 0)
-            {
-				son = new Solution(this);
-                daughter = new Solution(mother);
-
-				for(int i = rand.Next(_tuples.Length); i < _tuples.Length ; ++i)
-                {
-                    Agency a = this._tuples[i].Item1;
-                    son._tuples[i] = new Tuple<Agency, City>(a, mother._tuples[i].Item2);
-                    daughter._tuples[i] = new Tuple<Agency, City>(a, this._tuples[i].Item2);
-                }
-
-				if (son.validateCities() && daughter.validateCities())
-                {
-                    List<Solution> result = new List<Solution>();
-                    result.Add(son);
-                    result.Add(daughter);
-                    return result;
-                }
-
-                MAX_TRIES--;
-			}
-            return null;
-        }
-
         public Boolean validateCities()
         {
             Dictionary<City, int> cities = new Dictionary<City, int>();
@@ -782,32 +431,7 @@ namespace Metaheuristic
             
             return tripFee + agenciesFee;
         }
-
-		public bool containCity(List<City> cities, City city) {
-			foreach (City c in cities)
-				if (c.getId() == city.getId())
-					return true;
-			return false;
-		}
-
-        public Solution getGradientDescendSolution()
-        {
-            Solution best = this, tmp;
-            while ((tmp = best.getBestNeighbor()) != best)
-                best = tmp;
-            return best;
-        }
-
-        public Solution getBestNeighbor()
-        {
-            Solution best = this;
-            foreach (Solution neighbor in Neighbors)
-                if (neighbor.Cost < best.Cost)
-                    best = neighbor;
-            return best;
-        }
-
-
+        
         public override string ToString(){
             string str = "";
             for (int i = 0; i < _tuples.Length; i++)
@@ -857,22 +481,5 @@ namespace Metaheuristic
 			return dist;
 		}
 
-		public int getPersTot() {
-			int sum = 0;
-			foreach (City c in GUI.MainClass.getCities())
-			{
-				sum += this.getNbPers(c);
-			}
-			return sum;
-		}
-
-		public bool Equals(Solution sol)
-		{
-			for (int i = 0; i < _tuples.Length; i++) {
-				if (_tuples[i].Item2.getId() != sol._tuples[i].Item2.getId())
-					return false;
-			}
-			return true;
-		}
     }
 }

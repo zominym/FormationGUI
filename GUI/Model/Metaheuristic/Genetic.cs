@@ -91,44 +91,6 @@ namespace Metaheuristic
             return result;
         }
 
-        public List<Solution> RouletteSelection(List<Solution> population, int nbToTake){
-            double totalEfficiency = 0;
-            List<Solution> result = new List<Solution>();
-
-            foreach (Solution sol in population)
-            {
-                totalEfficiency += 1 / sol.Cost;
-            }
-
-            List<Solution> tmp = new List<Solution>(population);
-
-            int nbTaken = 0;
-            while (nbTaken < nbToTake)
-            {
-                double incrementation = 0;
-                double alpha = rand.NextDouble() * totalEfficiency;
-                for (int i = 0; i < tmp.Count; i++) {
-                    if (((1 / tmp[i].Cost) + incrementation) > alpha)
-                    {
-                        result.Add(tmp[i]);
-                        tmp.Remove(tmp[i]);
-                        totalEfficiency = 0;
-                        foreach (Solution sol in tmp)
-                        {
-                            totalEfficiency += 1 / sol.Cost;
-                        }
-                        nbTaken++;
-                        break;
-                    }
-                    else
-                    {
-                        incrementation += (1 / tmp[i].Cost);
-                    }
-                }
-            }
-            return result;
-        }
-
         public Solution getSolution() {
             List<Solution> nextPopulation, elite, crossResult, currentPopulation = buildPopulation();
             Solution bestSolution = getBestSolution(currentPopulation), currentBest;
@@ -144,7 +106,7 @@ namespace Metaheuristic
                 // Reproduction
                 while(nextPopulation.Count < currentPopulation.Count) {
                     // Combinaison
-                    if((crossResult = elite[rand.Next(elite.Count)].experiment(elite[rand.Next(elite.Count)])) != null)
+                    if((crossResult = elite[rand.Next(elite.Count)].crossover(elite[rand.Next(elite.Count)])) != null)
                         nextPopulation.AddRange(crossResult);
 
                     // Mutation
