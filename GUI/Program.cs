@@ -3,6 +3,8 @@ using Gtk;
 using TrainingProblem;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
+using System.Globalization;
 
 namespace GUI
 {
@@ -20,8 +22,10 @@ namespace GUI
 
 		public static void Main (string[] args)
 		{
-			Application.Init ();
+            Thread.CurrentThread.CurrentCulture = CultureInfo.CreateSpecificCulture("en-US");
+            Application.Init ();
 			win = new MainWindow ();
+            win.Title = "GUYL - PLATTEAU - JONATHAN";
 			win.Show ();
 			Application.Run ();
 		}
