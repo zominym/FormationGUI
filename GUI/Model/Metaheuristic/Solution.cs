@@ -446,21 +446,6 @@ namespace Metaheuristic
             return str;
 		}
 
-		public string toStringShort() {
-			string str = "";
-			int sum = 0;
-            int nbCenters = 0, number = 0;
-			foreach (City c in GUI.MainClass.getCities())
-			{
-                number = this.getNbPers(c);
-                str += " " + number;
-				sum += number;
-                if (number > 0)
-                    nbCenters++;
-			}
-			return str + " ; nbPersTot : " + sum + " ; nbCentres : " + getUsedCities().Count;
-		}
-
 		public void writeToCSV() {
 			StreamWriter sw = new StreamWriter(File.Create("outputs/" + DateTime.Now.ToString("RESULT dd_mm_yy HH-mm-ss") + ".csv"));
 			sw.WriteLine("\"latitude1\";\"longitude1\";\"nbpersonne1\";\"latitude2\";\"longitude2\"");
